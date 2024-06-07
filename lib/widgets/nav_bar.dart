@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:vihanga_cabs_web_admin_panel/athentication/login_screen.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/company_details.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/driver_details.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/temporary_driver_accounts.dart';
 
 class NavBar extends StatelessWidget {
   const NavBar({super.key});
@@ -6,7 +10,7 @@ class NavBar extends StatelessWidget {
   void _logOut(BuildContext context) {
     // Perform any necessary clean-up tasks here (e.g., clear user data, tokens, etc.)
     // Navigate to the login screen
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LogInScreen()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginScreen()));
   }
 
   void _goToDashboardPage(BuildContext context) {
@@ -36,17 +40,17 @@ class NavBar extends StatelessWidget {
 
   void _goToTempDriverAccountsPage(BuildContext context) {
     // Navigate to the temporary driver accounts page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const TempDriverAccountsPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const TemporaryDriverAccounts()));
   }
 
   void _goToDriverDetailsPage(BuildContext context) {
     // Navigate to the driver details page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const DriverDetailsPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const DriverDetails()));
   }
 
   void _goToCompanyDetailsPage(BuildContext context) {
     // Navigate to the company details page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const CompanyDetailsPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => CompanyDetails()));
   }
 
   @override
@@ -66,6 +70,9 @@ class NavBar extends StatelessWidget {
                 ),
               ),
             ),
+
+            SizedBox(width: 20,),
+
             ListTile(
               leading: Icon(Icons.dashboard),
               title: Text('Dashboard'),
@@ -133,6 +140,7 @@ class NavBar extends StatelessWidget {
               title: Text('Driver Details'),
               onTap: () => _goToDriverDetailsPage(context),
             ),
+
             ListTile(
               leading: Icon(Icons.business),
               title: Text('Company Details'),

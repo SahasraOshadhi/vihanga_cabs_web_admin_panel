@@ -1,17 +1,18 @@
+// driver_details.dart
 
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/display_driver_data.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
 
-class TemporaryDriverAccounts extends StatefulWidget {
-  const TemporaryDriverAccounts({super.key});
+class DriverDetails extends StatefulWidget {
+  const DriverDetails({super.key});
 
   @override
-  State<TemporaryDriverAccounts> createState() => _TemporaryDriverAccountsState();
+  State<DriverDetails> createState() => _DriverDetailsState();
 }
 
-class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
+class _DriverDetailsState extends State<DriverDetails> {
   final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref().child('drivers');
 
   late Future<List<Map<String, dynamic>>> _driversData;
@@ -28,7 +29,7 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
       List<Map<String, dynamic>> driversList = [];
       Map<dynamic, dynamic> data = snapshot.value as Map;
       data.forEach((key, value) {
-        if (value['blockStatus'] == 'yes') {
+        if (value['blockStatus'] == 'no') {
           driversList.add({
             'id': key,
             'firstName': value['firstName'] ?? '',
@@ -71,12 +72,7 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
         return DisplayDriverData(
           driverData: driverData,
           databaseRef: _databaseRef,
-          onAccepted: () {
-            setState(() {
-              _driversData = _fetchDriversData();
-            });
-          },
-          showActions: true,
+          showActions: false, // Do not show Accept and Reject buttons here
         );
       },
     );
@@ -87,7 +83,7 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
     return Scaffold(
       drawer: NavBar(),
       appBar: AppBar(
-        title: const Text('Temporary Driver Accounts'),
+        title: const Text('Driver Details'),
         backgroundColor: Colors.amber,
       ),
       body: SafeArea(
@@ -105,19 +101,16 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
 
               return Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: const BorderRadius.all(Radius.circular(30)),
-                  ),
-                  child: ListView.builder(
-                    itemCount: driversData.length,
-                    itemBuilder: (context, index) {
-                      final driver = driversData[index];
-                      return GestureDetector(
-                        onTap: () => _showDriverDetails(context, driver),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                child: ListView.builder(
+                  itemCount: driversData.length,
+                  itemBuilder: (context, index) {
+                    final driver = driversData[index];
+                    return GestureDetector(
+                      onTap: () => _showDriverDetails(context, driver),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: FractionallySizedBox(
+                          widthFactor: 0.90,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
@@ -173,9 +166,9 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               );
             }

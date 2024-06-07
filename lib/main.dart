@@ -23,6 +23,7 @@ Future<void> main() async {
           messagingSenderId: dotenv.env['MESSAGING_SENDER_ID']!,
           projectId: dotenv.env['PROJECT_ID']!,
           storageBucket: dotenv.env['STORAGE_BUCKET']!,
+          databaseURL: dotenv.env['DATABASE_URL']!,
         ),
       );
     } else {
