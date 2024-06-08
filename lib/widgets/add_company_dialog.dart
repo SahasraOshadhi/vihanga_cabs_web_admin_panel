@@ -71,7 +71,7 @@ class _AddCompanyDialogState extends State<AddCompanyDialog> {
     try {
       // Create a new user in Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: managerEmailController.text,
+        email: emailController.text,
         password: passwordController.text,
       );
 
@@ -84,7 +84,8 @@ class _AddCompanyDialogState extends State<AddCompanyDialog> {
         'managerContact': managerContactController.text,
         'managerEmail': managerEmailController.text,
         'contractPdfUrl': contractPdfUrl,
-        'userId': userCredential.user!.uid, // Store the user ID for deletion later
+        'userId': userCredential.user!.uid,
+        'createdAt': Timestamp.now(),// Store the user ID for deletion later
       });
 
       Navigator.of(context).pop();

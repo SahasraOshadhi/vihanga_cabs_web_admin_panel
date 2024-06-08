@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/pdf_picker.dart';
+import 'change_company_password.dart';
 
 class EditCompanyDialog extends StatefulWidget {
   final Map<String, dynamic> companyData;
@@ -20,25 +21,20 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
   late TextEditingController managerContactController;
   late TextEditingController managerEmailController;
   late TextEditingController contractPdfController;
-  late TextEditingController passwordController;
-  late TextEditingController confirmPasswordController;
   String? contractPdfUrl;
   bool isUploading = false;
-  bool isEmailChanged = false;
 
   @override
   void initState() {
     super.initState();
-    companyNameController = TextEditingController(text: widget.companyData['companyName']);
-    addressController = TextEditingController(text: widget.companyData['address']);
-    emailController = TextEditingController(text: widget.companyData['email']);
-    managerNameController = TextEditingController(text: widget.companyData['managerName']);
-    managerContactController = TextEditingController(text: widget.companyData['managerContact']);
-    managerEmailController = TextEditingController(text: widget.companyData['managerEmail']);
-    contractPdfController = TextEditingController(text: widget.companyData['contractPdfUrl']);
+    companyNameController = TextEditingController(text: widget.companyData['companyName'] ?? '');
+    addressController = TextEditingController(text: widget.companyData['address'] ?? '');
+    emailController = TextEditingController(text: widget.companyData['email'] ?? '');
+    managerNameController = TextEditingController(text: widget.companyData['managerName'] ?? '');
+    managerContactController = TextEditingController(text: widget.companyData['managerContact'] ?? '');
+    managerEmailController = TextEditingController(text: widget.companyData['managerEmail'] ?? '');
+    contractPdfController = TextEditingController(text: widget.companyData['contractPdfUrl'] ?? '');
     contractPdfUrl = widget.companyData['contractPdfUrl'];
-    passwordController = TextEditingController();
-    confirmPasswordController = TextEditingController();
   }
 
   void _onPdfUploaded(String pdfUrl) {
@@ -47,7 +43,7 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
     });
   }
 
-  Future<void> _updateCompany() async {
+  Future<void> _saveCompany() async {
     if (companyNameController.text.isEmpty ||
         addressController.text.isEmpty ||
         emailController.text.isEmpty ||
@@ -61,53 +57,55 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
       return;
     }
 
-    if (isEmailChanged || passwordController.text.isNotEmpty) {
-      if (passwordController.text.isEmpty || confirmPasswordController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Please fill both password fields.'),
-        ));
-        return;
-      }
-      if (passwordController.text != confirmPasswordController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Passwords do not match.'),
-        ));
-        return;
-      }
-    }
-
     setState(() {
       isUploading = true;
     });
 
-    String companyId = widget.companyData['id'];
+    String companyId = widget.companyData['companyId'] as String;
+    String managerEmail = widget.companyData['managerEmail'] as String;
+    String managerPassword = widget.companyData['managerPassword'] as String;
 
     try {
-      if (isEmailChanged || passwordController.text.isNotEmpty) {
-        User? user = FirebaseAuth.instance.currentUser;
+      print('Attempting to sign in with email: $managerEmail and password: $managerPassword');
 
-        // Update email and/or password
-        if (isEmailChanged) {
-          await user?.updateEmail(managerEmailController.text);
+      // Authenticate the manager to update email
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: managerEmail,
+        password: managerPassword,
+      );
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // Update email if it has changed
+        if (emailController.text != managerEmail) {
+          await user.updateEmail(emailController.text);
+
+          // Re-authenticate with the new email and old password
+          UserCredential newCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: emailController.text,
+            password: managerPassword,
+          );
+          user = newCredential.user;
         }
-        if (passwordController.text.isNotEmpty) {
-          await user?.updatePassword(passwordController.text);
-        }
+
+        // Update company details in Firestore
+        await FirebaseFirestore.instance.collection('companies').doc(companyId).update({
+          'companyName': companyNameController.text,
+          'address': addressController.text,
+          'email': emailController.text,
+          'managerName': managerNameController.text,
+          'managerContact': managerContactController.text,
+          'managerEmail': managerEmailController.text,
+          'contractPdfUrl': contractPdfUrl,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Company updated successfully.'),
+        ));
+        Navigator.of(context).pop();
       }
-
-      // Update company details in Firestore
-      await FirebaseFirestore.instance.collection('companies').doc(companyId).update({
-        'companyName': companyNameController.text,
-        'address': addressController.text,
-        'email': emailController.text,
-        'managerName': managerNameController.text,
-        'managerContact': managerContactController.text,
-        'managerEmail': managerEmailController.text,
-        'contractPdfUrl': contractPdfUrl,
-      });
-
-      Navigator.of(context).pop();
     } catch (e) {
+      print('Error signing in: $e'); // Print the error for debugging
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Failed to update company: $e'),
       ));
@@ -116,6 +114,18 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
         isUploading = false;
       });
     }
+  }
+
+  void _resetPassword() {
+    Navigator.of(context).pop();
+    showDialog(
+      context: context,
+      builder: (context) => ChangeCompanyPasswordDialog(
+        companyId: widget.companyData['companyId'] ?? '',
+        managerEmail: widget.companyData['managerEmail'] ?? '',
+        managerPassword: widget.companyData['managerPassword'] ?? '',
+      ),
+    );
   }
 
   @override
@@ -153,23 +163,6 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
             TextField(
               controller: managerEmailController,
               decoration: InputDecoration(labelText: 'Manager\'s Email'),
-              onChanged: (value) {
-                setState(() {
-                  isEmailChanged = true;
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: confirmPasswordController,
-              decoration: InputDecoration(labelText: 'Confirm Password'),
-              obscureText: true,
             ),
             const SizedBox(height: 20),
             PdfPickerTextField(
@@ -202,8 +195,23 @@ class _EditCompanyDialogState extends State<EditCompanyDialog> {
           ),
         const SizedBox(width: 10),
         if (!isUploading)
+          TextButton(
+            onPressed: _resetPassword,
+            child: Text(
+              'Reset Password',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+          ),
+        const SizedBox(width: 10),
+        if (!isUploading)
           ElevatedButton(
-            onPressed: _updateCompany,
+            onPressed: _saveCompany,
             child: Text(
               'Save',
               style: TextStyle(

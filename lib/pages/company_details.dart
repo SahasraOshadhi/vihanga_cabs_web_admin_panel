@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:vihanga_cabs_web_admin_panel/widgets/add_company_dialog.dart';
-import 'package:vihanga_cabs_web_admin_panel/widgets/edit_company_dialog.dart';
-import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:vihanga_cabs_web_admin_panel/methods/non_web_iframe.dart' if (dart.library.html) 'package:vihanga_cabs_web_admin_panel/methods/web_iframe.dart';
+import 'package:vihanga_cabs_web_admin_panel/widgets/add_company_dialog.dart';
+import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
 
 class CompanyDetails extends StatefulWidget {
   @override
@@ -23,52 +21,33 @@ class _CompanyDetailsState extends State<CompanyDetails> {
     );
   }
 
-  Future<void> _editCompany(Map<String, dynamic> companyData) async {
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return EditCompanyDialog(companyData: companyData);
-      },
-    );
-  }
+  Future<void> _deleteCompany(BuildContext context, QueryDocumentSnapshot company) async {
+    try {
+      // Get the user ID associated with the company
+      String userId = company['userId'];
+      String email = company['email'];
 
-  Future<void> _deleteCompany(String companyId) async {
-    await FirebaseFirestore.instance.collection('companies').doc(companyId).delete();
-  }
+      // Delete the company record from Firestore
+      await FirebaseFirestore.instance.collection('companies').doc(company.id).delete();
 
-  void _showPdfDialog(String pdfUrl) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          child: Column(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: Icon(Icons.download),
-                  onPressed: () async {
-                    if (await canLaunch(pdfUrl)) {
-                      await launch(pdfUrl);
-                    } else {
-                      print("Could not launch $pdfUrl");
-                    }
-                  },
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  height: 400,
-                  child: iframeView(pdfUrl), // Using the iframeView here
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+      // Delete the associated user using Cloud Function
+      HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('deleteUserByEmail');
+      await callable.call(<String, dynamic>{
+        'email': email,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Company and associated user deleted successfully.'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete company: $e'),
+        ),
+      );
+    }
   }
 
   @override
@@ -107,64 +86,81 @@ class _CompanyDetailsState extends State<CompanyDetails> {
           return ListView.builder(
             itemCount: companies.length,
             itemBuilder: (context, index) {
-              final company = companies[index].data() as Map<String, dynamic>;
-              final companyId = companies[index].id;
-              final createdDate = company['createdDate'] != null
-                  ? DateFormat.yMMMd().format(company['createdDate'].toDate())
-                  : 'N/A';
-
-              return Card(
-                margin: const EdgeInsets.all(10.0),
-                child: FractionallySizedBox(
-                  widthFactor: 0.90,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurpleAccent,
-                      borderRadius: const BorderRadius.all(Radius.circular(30)),
-                    ),
-                    child: ListTile(
-                      title: Text(company['companyName'], style: TextStyle(color: Colors.white)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Address: ${company['address']}', style: TextStyle(color: Colors.white)),
-                          Text('Email: ${company['email']}', style: TextStyle(color: Colors.white)),
-                          Text('Manager: ${company['managerName']}', style: TextStyle(color: Colors.white)),
-                          Text('Manager Contact: ${company['managerContact']}', style: TextStyle(color: Colors.white)),
-                          Text('Manager Email: ${company['managerEmail']}', style: TextStyle(color: Colors.white)),
-                          Text('Account Created: $createdDate', style: TextStyle(color: Colors.white)), // Display account creation date
-                          SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () => _showPdfDialog(company['contractPdfUrl']),
-                            child: Text('View Contract'),
-                            style: ElevatedButton.styleFrom(
-                              primary: Colors.deepOrange,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Colors.white),
-                            onPressed: () => _editCompany(company),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: Colors.white),
-                            onPressed: () => _deleteCompany(companyId),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
+              final company = companies[index];
+              return CompanyCard(company: company, deleteCompany: _deleteCompany);
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class CompanyCard extends StatelessWidget {
+  final QueryDocumentSnapshot company;
+  final Future<void> Function(BuildContext context, QueryDocumentSnapshot company) deleteCompany;
+
+  CompanyCard({required this.company, required this.deleteCompany});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Card(
+        margin: EdgeInsets.all(10),
+        child: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                company['companyName'],
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text('Address: ${company['address']}'),
+              SizedBox(height: 10),
+              Text('Company Email: ${company['email']}'),
+              SizedBox(height: 10),
+              Text('Manager Name: ${company['managerName']}'),
+              SizedBox(height: 10),
+              Text('Manager Contact: ${company['managerContact']}'),
+              SizedBox(height: 10),
+              Text('Manager Email: ${company['managerEmail']}'),
+              SizedBox(height: 10),
+              Text('Account Created: ${DateFormat.yMMMd().add_jm().format(company['createdAt'].toDate())}'),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      // View contract action
+                      // Open the PDF in a viewer
+                    },
+                    child: Text('View Contract'),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          // Edit company details action
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () async {
+                          await deleteCompany(context, company);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
