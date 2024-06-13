@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/display_driver_data.dart';
@@ -139,9 +138,26 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    CircleAvatar(
-                                      backgroundImage: NetworkImage(driver['selfPic']),
-                                      radius: 20,
+                                    ClipOval(
+                                      child: Image.network(
+                                        driver['selfPic'],
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.error, color: Colors.red);
+                                        },
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress.expectedTotalBytes != null
+                                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ],
                                 ),

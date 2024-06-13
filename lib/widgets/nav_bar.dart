@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vihanga_cabs_web_admin_panel/athentication/login_screen.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/accepted_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/company_details.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/driver_details.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/rejected_requests.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/ride_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/temporary_driver_accounts.dart';
 
 class NavBar extends StatelessWidget {
@@ -20,17 +24,17 @@ class NavBar extends StatelessWidget {
 
   void _goToRideRequestsPage(BuildContext context) {
     // Navigate to the ride requests page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const RideRequestsPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => RideRequestPage()));
   }
 
   void _goToAcceptedRidesPage(BuildContext context) {
     // Navigate to the accepted rides page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const AcceptedRidesPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AcceptedRequestsPage()));
   }
 
   void _goToRejectedRidesPage(BuildContext context) {
     // Navigate to the rejected rides page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const RejectedRidesPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) =>  RejectedRequestPage()));
   }
 
   void _goToCompletedRidesPage(BuildContext context) {
@@ -78,52 +82,104 @@ class NavBar extends StatelessWidget {
               title: Text('Dashboard'),
               onTap: () => _goToDashboardPage(context),
             ),
-            ListTile(
-              leading: Icon(Icons.notifications),
-              title: Text('Ride Requests'),
-              onTap: () => _goToRideRequestsPage(context),
-              trailing: ClipOval(
-                child: Container(
-                  color: Colors.red,
-                  width: 20,
-                  height: 20,
-                  child: Center(
-                    child: Text(
-                      '8',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('ride_requests')
+                  .where('assigned', isEqualTo: 'no') // Only fetch unassigned requests
+                  .snapshots(),
+              builder: (context, snapshot) {
+                int requestCount = 0;
+                if (snapshot.hasData) {
+                  requestCount = snapshot.data!.docs.length;
+                }
+                return ListTile(
+                  leading: Icon(Icons.notifications),
+                  title: Text('Ride Requests'),
+                  onTap: () => _goToRideRequestsPage(context),
+                  trailing: ClipOval(
+                    child: Container(
+                      color: Colors.amber,
+                      width: 20,
+                      height: 20,
+                      child: Center(
+                        child: Text(
+                          requestCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-            ListTile(
-              leading: Icon(Icons.check_circle),
-              title: Text('Accepted Rides'),
-              onTap: () => _goToAcceptedRidesPage(context),
-              trailing: ClipOval(
-                child: Container(
-                  color: Colors.green,
-                  width: 20,
-                  height: 20,
-                  child: Center(
-                    child: Text(
-                      '8',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('ride_requests')
+                  .where('acceptedByDriver', isEqualTo: 'yes')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                int requestCount = 0;
+                if (snapshot.hasData) {
+                  requestCount = snapshot.data!.docs.length;
+                }
+                return ListTile(
+                  leading: Icon(Icons.check_circle),
+                  title: Text('Accepted Rides'),
+                  onTap: () => _goToAcceptedRidesPage(context),
+                  trailing: ClipOval(
+                    child: Container(
+                      color: Colors.green,
+                      width: 20,
+                      height: 20,
+                      child: Center(
+                        child: Text(
+                          requestCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-            ListTile(
-              leading: Icon(Icons.cancel),
-              title: Text('Rejected Rides'),
-              onTap: () => _goToRejectedRidesPage(context),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('ride_requests')
+                  .where('acceptedByDriver', isEqualTo: 'no')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                int requestCount = 0;
+                if (snapshot.hasData) {
+                  requestCount = snapshot.data!.docs.length;
+                }
+                return ListTile(
+                  leading: Icon(Icons.cancel),
+                  title: Text('Rejected Rides'),
+                  onTap: () => _goToRejectedRidesPage(context),
+                  trailing: ClipOval(
+                    child: Container(
+                      color: Colors.red,
+                      width: 20,
+                      height: 20,
+                      child: Center(
+                        child: Text(
+                          requestCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: Icon(Icons.add_task),
@@ -146,6 +202,13 @@ class NavBar extends StatelessWidget {
               title: Text('Company Details'),
               onTap: () => _goToCompanyDetailsPage(context),
             ),
+
+            ListTile(
+              leading: Icon(Icons.money),
+              title: Text('Edit Rates'),
+              onTap: () => _goToCompletedRidesPage(context),
+            ),
+
             ListTile(
               leading: Icon(Icons.exit_to_app),
               title: Text('Log Out'),

@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/add_company_dialog.dart';
+import 'package:vihanga_cabs_web_admin_panel/widgets/edit_company_dialog.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
+import 'package:vihanga_cabs_web_admin_panel/widgets/pdf_view_dialog.dart';
 
 class CompanyDetails extends StatefulWidget {
   @override
@@ -23,14 +25,11 @@ class _CompanyDetailsState extends State<CompanyDetails> {
 
   Future<void> _deleteCompany(BuildContext context, QueryDocumentSnapshot company) async {
     try {
-      // Get the user ID associated with the company
       String userId = company['userId'];
       String email = company['email'];
 
-      // Delete the company record from Firestore
       await FirebaseFirestore.instance.collection('companies').doc(company.id).delete();
 
-      // Delete the associated user using Cloud Function
       HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('deleteUserByEmail');
       await callable.call(<String, dynamic>{
         'email': email,
@@ -104,6 +103,8 @@ class CompanyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final companyData = company.data() as Map<String, dynamic>?;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Card(
@@ -114,29 +115,40 @@ class CompanyCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                company['companyName'],
+                companyData?['companyName'] ?? 'No Company Name',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
-              Text('Address: ${company['address']}'),
+              Text('Address: ${companyData?['address'] ?? 'No Address'}'),
               SizedBox(height: 10),
-              Text('Company Email: ${company['email']}'),
+              Text('Company Email: ${companyData?['email'] ?? 'No Email'}'),
               SizedBox(height: 10),
-              Text('Manager Name: ${company['managerName']}'),
+              Text('Manager Name: ${companyData?['managerName'] ?? 'No Manager Name'}'),
               SizedBox(height: 10),
-              Text('Manager Contact: ${company['managerContact']}'),
+              Text('Manager Contact: ${companyData?['managerContact'] ?? 'No Manager Contact'}'),
               SizedBox(height: 10),
-              Text('Manager Email: ${company['managerEmail']}'),
+              Text('Manager Email: ${companyData?['managerEmail'] ?? 'No Manager Email'}'),
               SizedBox(height: 10),
-              Text('Account Created: ${DateFormat.yMMMd().add_jm().format(company['createdAt'].toDate())}'),
+              Text('Account Created: ${companyData?['createdAt'] != null ? DateFormat.yMMMd().add_jm().format(companyData!['createdAt'].toDate()) : 'No Date'}'),
               SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // View contract action
-                      // Open the PDF in a viewer
+                      if (companyData?.containsKey('contractPdfUrl') == true && companyData!['contractPdfUrl'] != null) {
+                        String pdfUrl = companyData['contractPdfUrl'];
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return PdfViewDialog(pdfUrl: pdfUrl);
+                          },
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('No contract available for this company.')),
+                        );
+                      }
                     },
                     child: Text('View Contract'),
                   ),
@@ -145,9 +157,18 @@ class CompanyCard extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
-                          // Edit company details action
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return EditCompanyDialog(
+                                companyData: companyData!,
+                                companyId: company.id,
+                              );
+                            },
+                          );
                         },
                       ),
+
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () async {
