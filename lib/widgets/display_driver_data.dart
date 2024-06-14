@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -15,12 +16,77 @@ class DisplayDriverData extends StatelessWidget {
     this.showActions = false,
   }) : super(key: key);
 
-  void _acceptDriver(BuildContext context) async {
-    if (onAccepted != null) {
-      await databaseRef.child(driverData['id']).update({'blockStatus': 'no'});
-      onAccepted!();
-    }
-    Navigator.of(context).pop();
+  Future<void> _promptCommissionRate(BuildContext context) async {
+    final TextEditingController _commissionRateController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Commission Rate'),
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _commissionRateController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Commission rate (%)'),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a commission rate';
+                }
+                final rate = int.tryParse(value);
+                if (rate == null || rate < 1 || rate > 100) {
+                  return 'Please enter a valid number between 1 and 100';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Submit'),
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  final rate = int.parse(_commissionRateController.text);
+                  await _updateDriverData(rate);
+                  Navigator.of(context).pop();
+                  if (onAccepted != null) {
+                    onAccepted!();
+                  }
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updateDriverData(int rate) async {
+    final driverId = driverData['id'];
+    final driverUpdateData = {
+      'commissionRate': rate,
+      'blockStatus': 'no',
+    };
+
+    // Update in Firebase Realtime Database
+    await databaseRef.child(driverId).update(driverUpdateData);
+
+    // Update in Firestore
+    final firestore = FirebaseFirestore.instance;
+    await firestore.collection('drivers').doc(driverId).update(driverUpdateData);
+  }
+
+  void _acceptDriver(BuildContext context) {
+    _promptCommissionRate(context);
   }
 
   @override
@@ -152,13 +218,6 @@ class DisplayDriverData extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Text('Model:'),
-                  Text(driverData['vehicleModel']),
-                ],
-              ),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -232,15 +291,16 @@ class DisplayDriverData extends StatelessWidget {
       actions: showActions
           ? <Widget>[
         TextButton(
-          child: const Text('Reject'),
+          child: const Text('Accept'),
           onPressed: () {
-            // Implement reject logic
-            Navigator.of(context).pop();
+            _acceptDriver(context);
           },
         ),
         TextButton(
-          child: const Text('Accept'),
-          onPressed: () => _acceptDriver(context),
+          child: const Text('Reject'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
         ),
       ]
           : null,

@@ -7,11 +7,13 @@ class TemporaryDriverAccounts extends StatefulWidget {
   const TemporaryDriverAccounts({super.key});
 
   @override
-  State<TemporaryDriverAccounts> createState() => _TemporaryDriverAccountsState();
+  State<TemporaryDriverAccounts> createState() =>
+      _TemporaryDriverAccountsState();
 }
 
 class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
-  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref().child('drivers');
+  final DatabaseReference _databaseRef =
+  FirebaseDatabase.instance.ref().child('drivers');
 
   late Future<List<Map<String, dynamic>>> _driversData;
 
@@ -63,7 +65,8 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
     }
   }
 
-  void _showDriverDetails(BuildContext context, Map<String, dynamic> driverData) {
+  void _showDriverDetails(
+      BuildContext context, Map<String, dynamic> driverData) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -96,7 +99,8 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Error fetching driver data: ${snapshot.error}'));
+              return Center(
+                  child: Text('Error fetching driver data: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(child: Text('No driver data available'));
             } else {
@@ -104,26 +108,20 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
 
               return Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: const BorderRadius.all(Radius.circular(30)),
-                  ),
-                  child: ListView.builder(
-                    itemCount: driversData.length,
-                    itemBuilder: (context, index) {
-                      final driver = driversData[index];
-                      return GestureDetector(
-                        onTap: () => _showDriverDetails(context, driver),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurpleAccent,
-                              borderRadius: const BorderRadius.all(Radius.circular(30)),
-                            ),
+                child: ListView.builder(
+                  itemCount: driversData.length,
+                  itemBuilder: (context, index) {
+                    final driver = driversData[index];
+                    return GestureDetector(
+                      onTap: () => _showDriverDetails(context, driver),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -134,7 +132,6 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -144,15 +141,24 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                         width: 100,
                                         height: 100,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Icon(Icons.error, color: Colors.red);
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Icon(Icons.error,
+                                              color: Colors.red);
                                         },
-                                        loadingBuilder: (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
                                           return Center(
                                             child: CircularProgressIndicator(
-                                              value: loadingProgress.expectedTotalBytes != null
-                                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                              value: loadingProgress
+                                                  .expectedTotalBytes !=
+                                                  null
+                                                  ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
                                                   : null,
                                             ),
                                           );
@@ -166,7 +172,6 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                   'NIC: ${driver['nic']}',
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: Colors.white,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -174,7 +179,6 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                   'Vehicle Model: ${driver['vehicleModel']}',
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: Colors.white,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -182,16 +186,15 @@ class _TemporaryDriverAccountsState extends State<TemporaryDriverAccounts> {
                                   'Vehicle Reg Number: ${driver['vehicleRegNum']}',
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: Colors.white,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               );
             }

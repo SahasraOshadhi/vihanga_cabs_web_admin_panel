@@ -2,25 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
 
-class AcceptedRequestsPage extends StatefulWidget {
+class CompletedRidesPage extends StatefulWidget {
   @override
-  _AcceptedRequestsPageState createState() => _AcceptedRequestsPageState();
+  _CompletedRidesPageState createState() => _CompletedRidesPageState();
 }
 
-class _AcceptedRequestsPageState extends State<AcceptedRequestsPage> {
+class _CompletedRidesPageState extends State<CompletedRidesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: NavBar(),
       appBar: AppBar(
-        title: const Text('Accepted Ride Requests'),
+        title: const Text('Completed Rides'),
         backgroundColor: Colors.amber,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('ride_requests')
-            .where('acceptedByDriver', isEqualTo: 'yes')
-            .where('rideCompletedByUser', isEqualTo: 'no') // Filter out completed rides by user
+            .where('rideCompletedByUser', isEqualTo: 'yes') // Only fetch completed rides by user
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -31,7 +30,7 @@ class _AcceptedRequestsPageState extends State<AcceptedRequestsPage> {
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               DocumentSnapshot rideRequest = snapshot.data!.docs[index];
-              return AcceptedRideRequestCard(rideRequest: rideRequest);
+              return CompletedRideRequestCard(rideRequest: rideRequest);
             },
           );
         },
@@ -40,16 +39,16 @@ class _AcceptedRequestsPageState extends State<AcceptedRequestsPage> {
   }
 }
 
-class AcceptedRideRequestCard extends StatefulWidget {
+class CompletedRideRequestCard extends StatefulWidget {
   final DocumentSnapshot rideRequest;
 
-  const AcceptedRideRequestCard({Key? key, required this.rideRequest}) : super(key: key);
+  const CompletedRideRequestCard({Key? key, required this.rideRequest}) : super(key: key);
 
   @override
-  _AcceptedRideRequestCardState createState() => _AcceptedRideRequestCardState();
+  _CompletedRideRequestCardState createState() => _CompletedRideRequestCardState();
 }
 
-class _AcceptedRideRequestCardState extends State<AcceptedRideRequestCard> {
+class _CompletedRideRequestCardState extends State<CompletedRideRequestCard> {
   late Stream<DocumentSnapshot> _rideRequestStream;
 
   @override
@@ -112,9 +111,6 @@ class _AcceptedRideRequestCardState extends State<AcceptedRideRequestCard> {
                     }
                     var driverData = driverSnapshot.data!;
 
-                    String status = rideData['rideStarted'] == 'yes' ? 'Ongoing' : (rideData['status'] ?? 'N/A');
-                    Color statusColor = rideData['rideStarted'] == 'yes' ? Colors.green : Colors.grey;
-
 
                     return Card(
                       margin: EdgeInsets.all(10.0),
@@ -145,25 +141,14 @@ class _AcceptedRideRequestCardState extends State<AcceptedRideRequestCard> {
                             Text("No of Passengers: ${rideData['passengers'] ?? 'N/A'}"),
                             SizedBox(height: 5),
                             Text(
-                                "Created Date: ${rideData['createdAt'] != null ? (rideData['createdAt'] as Timestamp).toDate().toString() : 'N/A'}"),
+                              "Created Date: ${rideData['createdAt'] != null ? (rideData['createdAt'] as Timestamp).toDate().toString() : 'N/A'}",
+                            ),
                             SizedBox(height: 20),
                             Text("Driver Name: ${driverData['firstName'] ?? 'N/A'} ${driverData['lastName'] ?? 'N/A'}"),
                             SizedBox(height: 5),
                             Text("Driver Contact: ${driverData['telNum'] ?? 'N/A'}"),
-                            SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Text("Status: "),
-                                SizedBox(width: 20),
-                                ElevatedButton(
-                                  onPressed: null, // Disable the button for status display only
-                                  child: Text(status),
-                                  style: ElevatedButton.styleFrom(
-                                    primary: statusColor,
-                                  ),
-                                ),
-                              ],
-                            ),
+
+
                           ],
                         ),
                       ),

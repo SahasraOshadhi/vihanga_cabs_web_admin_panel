@@ -3,6 +3,7 @@ import 'package:vihanga_cabs_web_admin_panel/main_screen/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vihanga_cabs_web_admin_panel/methods/common_methods.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/ride_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/loading_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (adminDoc.exists) {
           Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (c) => HomeScreen()));
+              context, MaterialPageRoute(builder: (c) => RideRequestPage()));
         } else {
           FirebaseAuth.instance.signOut();
           commonMethods.displaySnackBar("No admin record found. Please contact support.", context);

@@ -1,5 +1,3 @@
-// driver_details.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/display_driver_data.dart';
@@ -81,7 +79,7 @@ class _DriverDetailsState extends State<DriverDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: NavBar(),
+      drawer: const NavBar(),
       appBar: AppBar(
         title: const Text('Driver Details'),
         backgroundColor: Colors.amber,
@@ -108,33 +106,30 @@ class _DriverDetailsState extends State<DriverDetails> {
                     return GestureDetector(
                       onTap: () => _showDriverDetails(context, driver),
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: FractionallySizedBox(
-                          widthFactor: 0.90,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurpleAccent,
-                              borderRadius: const BorderRadius.all(Radius.circular(30)),
-                            ),
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
+                                    CircleAvatar(
+                                      backgroundImage: NetworkImage(driver['selfPic']),
+                                      radius: 30,
+                                    ),
+                                    const SizedBox(width: 10),
                                     Text(
                                       '${driver['firstName']} ${driver['lastName']}',
                                       style: const TextStyle(
-                                        fontSize: 22,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
                                       ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    CircleAvatar(
-                                      backgroundImage: NetworkImage(driver['selfPic']),
-                                      radius: 20,
                                     ),
                                   ],
                                 ),
@@ -142,24 +137,21 @@ class _DriverDetailsState extends State<DriverDetails> {
                                 Text(
                                   'NIC: ${driver['nic']}',
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
+                                    fontSize: 16,
                                   ),
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 5),
                                 Text(
                                   'Vehicle Model: ${driver['vehicleModel']}',
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
+                                    fontSize: 16,
                                   ),
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 5),
                                 Text(
                                   'Vehicle Reg Number: ${driver['vehicleRegNum']}',
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
+                                    fontSize: 16,
                                   ),
                                 ),
                               ],

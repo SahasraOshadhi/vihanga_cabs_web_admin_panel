@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vihanga_cabs_web_admin_panel/athentication/login_screen.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/accepted_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/company_details.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/completed_rides.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/driver_details.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/edit_rates.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/rejected_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/ride_requests.dart';
 import 'package:vihanga_cabs_web_admin_panel/pages/temporary_driver_accounts.dart';
@@ -39,7 +41,7 @@ class NavBar extends StatelessWidget {
 
   void _goToCompletedRidesPage(BuildContext context) {
     // Navigate to the completed rides page
-    //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const CompletedRidesPage()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) =>  CompletedRidesPage()));
   }
 
   void _goToTempDriverAccountsPage(BuildContext context) {
@@ -56,6 +58,12 @@ class NavBar extends StatelessWidget {
     // Navigate to the company details page
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => CompanyDetails()));
   }
+
+  void _goToEditRatesPage(BuildContext context) {
+    // Navigate to the company details page
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => EditRates()));
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +127,7 @@ class NavBar extends StatelessWidget {
               stream: FirebaseFirestore.instance
                   .collection('ride_requests')
                   .where('acceptedByDriver', isEqualTo: 'yes')
+                  .where('rideCompletedByUser' , isEqualTo: 'no')
                   .snapshots(),
               builder: (context, snapshot) {
                 int requestCount = 0;
@@ -206,7 +215,7 @@ class NavBar extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.money),
               title: Text('Edit Rates'),
-              onTap: () => _goToCompletedRidesPage(context),
+              onTap: () => _goToEditRatesPage(context),
             ),
 
             ListTile(
