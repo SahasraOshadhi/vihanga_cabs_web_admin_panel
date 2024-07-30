@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:intl/intl.dart';
+import 'package:vihanga_cabs_web_admin_panel/pages/show_company_rides.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/add_company_dialog.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/edit_company_dialog.dart';
 import 'package:vihanga_cabs_web_admin_panel/widgets/nav_bar.dart';
@@ -168,12 +169,22 @@ class CompanyCard extends StatelessWidget {
                           );
                         },
                       ),
-
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () async {
                           await deleteCompany(context, company);
                         },
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ShowCompanyRides(companyId: company.id),
+                            ),
+                          );
+                        },
+                        child: Text('Show Ride Details'),
                       ),
                     ],
                   ),
